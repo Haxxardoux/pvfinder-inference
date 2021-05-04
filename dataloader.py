@@ -1,7 +1,7 @@
 import jax
 import torch
+import numpy as np
 import warnings
-
 
 # This can throw a warning about float - let's hide it for now.
 with warnings.catch_warnings():
@@ -26,7 +26,7 @@ class KDE_to_PV_Dataset(torch.utils.data.Dataset):
     def __init__(
         self,
         *files,
-        dtype=jax.numpy.float32,
+        dtype=np.float32,
         masking=False,
         slice=None,
         load_xy=False,
@@ -41,28 +41,28 @@ class KDE_to_PV_Dataset(torch.utils.data.Dataset):
         for XY_file in files:
             with h5py.File(XY_file, mode="r") as XY:
                 ## .expand_dims(axis=1) makes X (a x b) --> (a x 1 x b) (axis 0, axis 1, axis 2)
-                X = jax.numpy.expand_dims(jax.numpy.asarray(XY["kernel"]), axis=1).astype(dtype)
-                Y = jax.numpy.asarray(XY["pv"]).astype(dtype)
+                X = np.expand_dims(np.asarray(XY["kernel"]), axis=1).astype(dtype)
+                Y = np.asarray(XY["pv"]).astype(dtype)
 
 
                 if load_xy:
-                    x = jax.numpy.expand_dims(jax.numpy.asarray(XY["Xmax"]), axis=1).astype(dtype)
-                    y = jax.numpy.expand_dims(jax.numpy.asarray(XY["Ymax"]), axis=1).astype(dtype)
+                    x = np.expand_dims(np.asarray(XY["Xmax"]), axis=1).astype(dtype)
+                    y = np.expand_dims(np.asarray(XY["Ymax"]), axis=1).astype(dtype)
                     x = x*(X != 0)
                     y = y*(X != 0)
-                    X = jax.numpy.concatenate((X, x, y), axis=1)  ## filling in axis with (X,x,y)
+                    X = np.concatenate((X, x, y), axis=1)  ## filling in axis with (X,x,y)
 
                 if masking:
                     # Set the result to nan if the "other" array is above
                     # threshold and the current array is below threshold
-                    Y = jax.ops.index_update(Y, ((jax.numpy.asarray(XY["pv_other"]) > 0.01) & (Y < 0.01)), jax.numpy.nan)
-#                     Y = Y * jax.numpy.nan * ((jax.numpy.asarray(XY["pv_other"]) > 0.01) & (Y < 0.01))
+                    Y[(np.asarray(XY["pv_other"]) > 0.01) & (Y < 0.01)] = dtype(np.nan)
+#                     Y = jax.ops.index_update(Y, ((np.asarray(XY["pv_other"]) > 0.01) & (Y < 0.01)), jax.numpy.nan)
 
                 Xlist.append(X)
                 Ylist.append(Y)
 
-        X = jax.numpy.concatenate(Xlist, axis=0)
-        Y = jax.numpy.concatenate(Ylist, axis=0)
+        X = np.concatenate(Xlist, axis=0)
+        Y = np.concatenate(Ylist, axis=0)
 
         if slice:
             X = X[slice, :, :]
