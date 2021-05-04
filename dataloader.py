@@ -41,16 +41,16 @@ class KDE_to_PV_Dataset(torch.utils.data.Dataset):
         for XY_file in files:
             with h5py.File(XY_file, mode="r") as XY:
                 ## .expand_dims(axis=1) makes X (a x b) --> (a x 1 x b) (axis 0, axis 1, axis 2)
-                X = np.expand_dims(np.asarray(XY["kernel"]), axis=1).astype(dtype)
+                X = np.expand_dims(np.asarray(XY["kernel"]), axis=-1).astype(dtype)
                 Y = np.asarray(XY["pv"]).astype(dtype)
 
 
                 if load_xy:
-                    x = np.expand_dims(np.asarray(XY["Xmax"]), axis=1).astype(dtype)
-                    y = np.expand_dims(np.asarray(XY["Ymax"]), axis=1).astype(dtype)
+                    x = np.expand_dims(np.asarray(XY["Xmax"]), axis=-1).astype(dtype)
+                    y = np.expand_dims(np.asarray(XY["Ymax"]), axis=-1).astype(dtype)
                     x = x*(X != 0)
                     y = y*(X != 0)
-                    X = np.concatenate((X, x, y), axis=1)  ## filling in axis with (X,x,y)
+                    X = np.concatenate((X, x, y), axis=-1)  ## filling in axis with (X,x,y)
 
                 if masking:
                     # Set the result to nan if the "other" array is above
