@@ -19,6 +19,7 @@ optimizer = optim.Adam(learning_rate=3e-4).create(variables['params'])
 optimizer = jax.device_put(optimizer)
 
 # define loss 
+@jax.jit
 def symmetrical_loss(pred, truth):
     valid = (~jnp.isnan(truth)).astype(jnp.float32)
 
@@ -47,11 +48,12 @@ def train_step(optimizer, kdes, pvs):
     return optimizer, loss
 
 iterator = tqdm(train_loader)
+# with mlflow.start_run():
 for batch in iterator:
-#     TODO: use different dataloader so i dont have to do this : (
+#         TODO: use different dataloader so i dont have to do this : (
     kdes, pvs = batch
     kdes, pvs = jnp.array(kdes), jnp.array(pvs.unsqueeze(-1))
-    
+
     optimizer, (loss, pred) = train_step(optimizer, kdes, pvs)
     iterator.set_description(f'Loss: {loss.mean()}')
     
